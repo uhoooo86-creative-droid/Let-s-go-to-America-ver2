@@ -1,43 +1,80 @@
 // ================================================================
-//  links-loader.js  —  링크 데이터 로드/저장 공통 유틸
-//
-//  우선순위: data/links.json → localStorage 순서로 로드
-//  저장: localStorage (즉시) + 내보내기(JSON 다운로드)
+//  links-loader.js  —  JSONBin 연동 링크 저장/로드
+//  어드민에서 저장 → JSONBin → index.html 즉시 반영
 // ================================================================
+
+const JSONBIN_API_KEY = '$2a$10$voerWcEY5FKhrzE.0zmGeeqZwD25ls6bejxyjK4nrPNIOAHW5ytVi';
+const JSONBIN_BIN_ID  = '69c095e499b15f1d78364321';
+const JSONBIN_URL     = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
 const LinksStore = (() => {
   const LS_KEY = 'wollim_links_v2';
   let _data = {};
+  let _syncing = false;
 
   // ── 초기 로드 ─────────────────────────────────────────────────
+  // 우선순위: JSONBin → localStorage → 빈 객체
   async function init() {
-    // 1) 먼저 localStorage 확인
+    // 1) JSONBin에서 최신 데이터 로드
+    try {
+      const res = await fetch(JSONBIN_URL + '/latest', {
+        headers: {
+          'X-Master-Key': JSONBIN_API_KEY,
+          'X-Bin-Meta': 'false',
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        _data = json || {};
+        // 로컬에도 캐시
+        localStorage.setItem(LS_KEY, JSON.stringify(_data));
+        console.log('[LinksStore] JSONBin 로드 완료:', Object.keys(_data).length + '개');
+        return;
+      }
+    } catch (e) {
+      console.warn('[LinksStore] JSONBin 로드 실패, 로컬 캐시 사용:', e.message);
+    }
+
+    // 2) JSONBin 실패 시 localStorage 캐시 사용
     try {
       const ls = localStorage.getItem(LS_KEY);
-      if (ls) { _data = JSON.parse(ls); return; }
-    } catch {}
-
-    // 2) data/links.json fetch 시도
-    try {
-      const res = await fetch('./data/links.json');
-      if (res.ok) {
-        _data = await res.json();
-        localStorage.setItem(LS_KEY, JSON.stringify(_data));
+      if (ls) {
+        _data = JSON.parse(ls);
+        console.log('[LinksStore] 로컬 캐시 로드:', Object.keys(_data).length + '개');
         return;
       }
     } catch {}
 
-    // 3) 둘 다 없으면 빈 객체 + 스켈레톤 생성 (data.js의 generateLinksTemplate 사용)
-    if (typeof generateLinksTemplate === 'function') {
-      _data = generateLinksTemplate();
-    } else {
-      _data = {};
-    }
-    _persist();
+    // 3) 둘 다 없으면 빈 객체
+    _data = {};
   }
 
+  // ── JSONBin에 저장 ────────────────────────────────────────────
+  async function _pushToCloud() {
+    if (_syncing) return;
+    _syncing = true;
+    try {
+      const res = await fetch(JSONBIN_URL, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': JSONBIN_API_KEY,
+        },
+        body: JSON.stringify(_data),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      console.log('[LinksStore] JSONBin 저장 완료');
+    } catch (e) {
+      console.error('[LinksStore] JSONBin 저장 실패:', e.message);
+    } finally {
+      _syncing = false;
+    }
+  }
+
+  // ── 로컬 저장 + 클라우드 동기화 ──────────────────────────────
   function _persist() {
     localStorage.setItem(LS_KEY, JSON.stringify(_data));
+    _pushToCloud(); // 비동기로 클라우드에 저장
   }
 
   // ── CRUD ──────────────────────────────────────────────────────
@@ -78,7 +115,7 @@ const LinksStore = (() => {
     return { totalLinks, filledItems, raw: _data };
   }
 
-  // ── 내보내기: JSON 파일 다운로드 ─────────────────────────────
+  // ── JSON 파일 다운로드 ────────────────────────────────────────
   function exportJSON() {
     const blob = new Blob([JSON.stringify(_data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
@@ -88,17 +125,22 @@ const LinksStore = (() => {
     URL.revokeObjectURL(a.href);
   }
 
-  // ── 내보내기: 클립보드 ────────────────────────────────────────
+  // ── 클립보드 복사 ─────────────────────────────────────────────
   function copyToClipboard() {
     return navigator.clipboard?.writeText(JSON.stringify(_data, null, 2));
   }
 
-  // ── Raw 읽기 (어드민 JSON 뷰어용) ────────────────────────────
+  // ── Raw JSON 문자열 ───────────────────────────────────────────
   function rawJSON() {
     return JSON.stringify(_data, null, 2);
   }
 
-  return { init, get, has, set, clear, merge, stats, exportJSON, copyToClipboard, rawJSON };
+  // ── 동기화 상태 확인 ──────────────────────────────────────────
+  function isSyncing() {
+    return _syncing;
+  }
+
+  return { init, get, has, set, clear, merge, stats, exportJSON, copyToClipboard, rawJSON, isSyncing };
 })();
 
 // ── 미리보기 헬퍼 ────────────────────────────────────────────────
@@ -121,7 +163,7 @@ function getPreviewHTML(url, typeKey, title) {
   }
 
   if (typeKey === 'trackUrl') {
-    const isAudio = /\.(mp3|wav|ogg|m4a|aac)/i.test(url) || url.includes('cloudinary') || url.includes('res.cloudinary');
+    const isAudio = /\.(mp3|wav|ogg|m4a|aac)/i.test(url) || url.includes('cloudinary');
     if (isAudio) {
       return `<div style="padding:16px"><audio controls src="${url}" style="width:100%"></audio></div>`;
     }
