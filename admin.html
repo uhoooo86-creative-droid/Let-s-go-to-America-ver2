@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>울림티쳐 어드민</title>
+<style>
+:root {
+  --bg: #0c0c12;
+  --surface: #14141e;
+  --border: #1e1e2e;
+  --border2: #2a2a3e;
+  --text: #e2e2f0;
+  --muted: #5a5a7a;
+  --accent: #6d5cfa;
+  --accent2: #a78bfa;
+  --track: #6366f1;
+  --video: #ef4444;
+  --plan: #10b981;
+  --event: #f59e0b;
+  --success: #22d3a0;
+  --danger: #f43f5e;
+  --font: 'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+a{color:inherit;text-decoration:none}
+
+/* ── 로그인 화면 ── */
+#loginScreen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 30% 40%,rgba(109,92,250,0.15) 0%,transparent 60%);
+}
+.loginBox{
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:40px 32px;width:100%;max-width:360px;
+}
+.loginLogo{font-size:13px;font-weight:700;letter-spacing:3px;color:var(--accent2);margin-bottom:8px}
+.loginTitle{font-size:22px;font-weight:800;margin-bottom:4px}
+.loginSub{font-size:12px;color:var(--muted);margin-bottom:28px}
+.loginInput{
+  width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:10px;
+  padding:12px 14px;color:var(--text);font-size:14px;font-family:var(--font);
+  outline:none;margin-bottom:10px;
+}
+.loginInput:focus{border-color:var(--accent)}
+.loginBtn{
+  width:100%;padding:13px;background:var(--accent);border:none;border-radius:10px;
+  color:#fff;font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer;
+  transition:opacity .15s;
+}
+.loginBtn:hover{opacity:.85}
+.loginErr{color:var(--danger);font-size:12px;margin-top:6px;display:none}
+
+/* ── 앱 껍데기 ── */
+#adminApp{display:none;flex-direction:column;min-height:100vh}
+
+/* ── 헤더 ── */
+.appHeader{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  background:var(--surface);position:sticky;top:0;z-index:50;
+}
+.headerLogo{
+  font-size:13px;font-weight:800;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.headerSub{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:1px}
+.headerRight{display:flex;align-items:center;gap:8px}
+
+/* ── 탭바 ── */
+.tabBar{
+  display:flex;gap:4px;padding:12px 20px 0;
+  border-bottom:1px solid var(--border);background:var(--surface);
+  position:sticky;top:57px;z-index:40;overflow-x:auto;
+}
+.tabBtn{
+  padding:9px 16px;border:none;background:transparent;
+  color:var(--muted);font-size:12px;font-weight:600;font-family:var(--font);
+  cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;
+  transition:all .15s;margin-bottom:-1px;
+}
+.tabBtn.on{color:var(--accent2);border-color:var(--accent)}
+
+/* ── 메인 콘텐츠 영역 ── */
+.appBody{padding:20px;max-width:600px;margin:0 auto;padding-bottom:60px}
+
+/* ── 통계 카드 ── */
+.statRow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.statCard{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:14px;text-align:center;
+}
+.statNum{font-size:24px;font-weight:800;color:var(--accent2)}
+.statLbl{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.5px}
+
+/* ── 그리드 버튼 ── */
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.gBtn{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:12px 4px 10px;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  color:var(--text);cursor:pointer;font-family:var(--font);
+  transition:all .15s;position:relative;overflow:hidden;
+}
+.gBtn:hover{border-color:var(--border2)}
+.gBtn.on{background:var(--accent);border-color:var(--accent)}
+.gBtn.on .gl{color:rgba(255,255,255,.75)}
+.gBtn.on .gm{color:#fff}
+.gm{font-size:14px;font-weight:800}
+.gl{font-size:9px;color:var(--muted);font-weight:600}
+.pbar{height:2px;border-radius:2px;background:var(--border2);position:absolute;bottom:0;left:0;right:0}
+.pfill{height:100%;border-radius:2px;background:var(--success);transition:width .3s}
+
+/* ── 섹션 라벨 ── */
+.sl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px}
+
+/* ── 카드 ── */
+.itemCard{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;margin-bottom:8px;
+}
+.itemTitle{font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.dots{display:flex;gap:4px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--border2);transition:background .2s}
+
+/* ── URL 행 ── */
+.urlRow{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.typeTag{
+  padding:4px 8px;border-radius:5px;font-size:10px;font-weight:700;
+  white-space:nowrap;min-width:56px;text-align:center;
+  border:1px solid var(--border2);color:var(--muted);background:var(--bg);
+  transition:all .2s;
+}
+.typeTag.t{border-color:var(--track);color:var(--track);background:rgba(99,102,241,.08)}
+.typeTag.v{border-color:var(--video);color:var(--video);background:rgba(239,68,68,.08)}
+.typeTag.p{border-color:var(--plan);color:var(--plan);background:rgba(16,185,129,.08)}
+.typeTag.e{border-color:var(--event);color:var(--event);background:rgba(245,158,11,.08)}
+
+.urlInput{
+  flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:7px;
+  padding:7px 10px;color:var(--text);font-size:11px;font-family:var(--font);
+  outline:none;transition:border-color .15s;min-width:0;
+}
+.urlInput:focus{border-color:var(--accent)}
+.urlInput.filled{border-color:rgba(109,92,250,.4)}
+
+.svBtn{
+  padding:6px 11px;background:var(--accent);border:none;border-radius:7px;
+  color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);
+  white-space:nowrap;transition:all .15s;flex-shrink:0;
+}
+.svBtn:hover{opacity:.85}
+.svBtn.ok{background:var(--success)}
+
+.pvBtn{
+  padding:5px 9px;border:1px solid var(--border2);border-radius:6px;
+  background:transparent;color:var(--muted);font-size:10px;
+  cursor:pointer;font-family:var(--font);white-space:nowrap;flex-shrink:0;
+  transition:all .15s;
+}
+.pvBtn:hover{border-color:var(--border);color:var(--text)}
+.pvBtn.active{border-color:var(--accent);color:var(--accent2);background:rgba(109,92,250,.1)}
+
+.clrBtn{
+  background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;
+  padding:3px 5px;flex-shrink:0;
+}
+.clrBtn:hover{color:var(--danger)}
+
+/* ── 브레드크럼 ── */
+.crumb{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  font-size:11px;color:var(--muted);padding:10px 0 14px;
+  border-bottom:1px solid var(--border);margin-bottom:16px;
+}
+.crumb span{cursor:pointer;transition:color .1s}.crumb span:hover{color:var(--text)}
+.crumb span.cur{color:var(--text);font-weight:600;cursor:default}
+.crumbSep{color:var(--border2)}
+
+/* ── 서브탭 (과목/행사) ── */
+.subTabRow{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
+.subTab{
+  padding:7px 14px;border-radius:20px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);font-size:11px;font-weight:700;
+  cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .15s;
+}
+.subTab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── 행사 카드 ── */
+.evCard{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:12px;
+}
+.evCard:hover{border-color:var(--border2)}
+
+/* ── 공지 ── */
+.noticeCard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px}
+textarea.noticeInput{
+  width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;
+  padding:10px 12px;color:var(--text);font-size:12px;font-family:var(--font);
+  resize:vertical;min-height:80px;outline:none;
+}
+textarea.noticeInput:focus{border-color:var(--accent)}
+
+/* ── 버튼 ── */
+.btn{
+  padding:8px 14px;border-radius:8px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);font-size:12px;font-weight:700;
+  cursor:pointer;font-family:var(--font);transition:all .15s;
+}
+.btn:hover{border-color:var(--border);color:var(--text)}
+.btn.pr{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pr:hover{opacity:.85}
+.btn.danger{border-color:var(--danger);color:var(--danger)}
+.btn.sm{padding:5px 10px;font-size:10px}
+
+/* ── 섹션 라인 ── */
+.divider{height:1px;background:var(--border);margin:20px 0}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;top:14px;right:16px;
+  background:var(--success);color:#fff;
+  padding:9px 16px;border-radius:10px;font-size:12px;font-weight:700;
+  z-index:999;opacity:0;transform:translateY(-8px);
+  transition:all .2s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── 모달 ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal{
+  background:var(--surface);border-radius:20px 20px 0 0;
+  padding:22px 20px 40px;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;
+  border-top:1px solid var(--border2);
+}
+.modalTitle{font-size:14px;font-weight:800;margin-bottom:4px;color:var(--text)}
+.modalSub{font-size:11px;color:var(--muted);margin-bottom:14px}
+textarea.jsonArea{
+  width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;
+  padding:12px;color:var(--text);font-size:11px;font-family:monospace;
+  min-height:200px;resize:vertical;outline:none;
+}
+
+/* ── 미리보기 모달 ── */
+.pvOverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:flex;align-items:flex-end;justify-content:center}
+.pvModal{
+  background:var(--surface);border-radius:20px 20px 0 0;
+  padding:16px 0 0;width:100%;max-width:600px;
+  border-top:1px solid var(--border2);overflow:hidden;
+}
+.pvHeader{display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;border-bottom:1px solid var(--border)}
+.pvTitle{font-size:12px;font-weight:700;color:var(--text)}
+.pvBody{max-height:60vh;overflow-y:auto}
+
+/* ── 빈 상태 ── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:12px}
+
+/* ── 대시보드 아이템 ── */
+.dashItem{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px}
+.dashItem:last-child{border-bottom:none}
+
+input[type=checkbox]{accent-color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- ── 로그인 ── -->
+<div id="loginScreen">
+  <div class="loginBox">
+    <div class="loginLogo">WOLLIM</div>
+    <div class="loginTitle">어드민 로그인</div>
+    <div class="loginSub">관리자 비밀번호를 입력해주세요</div>
+    <input class="loginInput" type="password" id="pwInput" placeholder="비밀번호" autocomplete="current-password">
+    <button class="loginBtn" onclick="doLogin()">로그인</button>
+    <div class="loginErr" id="loginErr">비밀번호가 올바르지 않습니다</div>
+  </div>
+</div>
+
+<!-- ── 앱 ── -->
+<div id="adminApp">
+
+  <div class="appHeader">
+    <div>
+      <div class="headerLogo">WOLLIM ADMIN</div>
+      <div class="headerSub">울림티쳐 링크 관리 패널</div>
+    </div>
+    <div class="headerRight">
+      <button class="btn sm" onclick="LinksStore.exportJSON()">JSON 다운로드</button>
+      <button class="btn sm" onclick="showImpModal()">가져오기</button>
+      <button class="btn sm danger" onclick="doLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 탭바 -->
+  <div class="tabBar">
+    <button class="tabBtn on" id="tab-dash"    onclick="switchTab('dash')">대시보드</button>
+    <button class="tabBtn"    id="tab-content" onclick="switchTab('content')">과목 콘텐츠</button>
+    <button class="tabBtn"    id="tab-event"   onclick="switchTab('event')">행사 자료</button>
+    <button class="tabBtn"    id="tab-notice"  onclick="switchTab('notice')">공지사항</button>
+  </div>
+
+  <div class="appBody">
+
+    <!-- ─── 대시보드 ─── -->
+    <div id="pane-dash">
+      <div class="statRow" id="statRow"></div>
+      <div class="sl">과목별 현황</div>
+      <div id="dashSubjects"></div>
+    </div>
+
+    <!-- ─── 콘텐츠 탭 ─── -->
+    <div id="pane-content" style="display:none">
+      <div class="subTabRow">
+        <button class="subTab on" id="ctab-subject" onclick="switchCTab('subject')">과목별</button>
+        <button class="subTab"    id="ctab-event"   onclick="switchCTab('event')">행사별</button>
+      </div>
+      <div id="subjectPane"><div id="subjectRoot"></div></div>
+      <div id="eventPane" style="display:none"><div id="eventRoot"></div></div>
+    </div>
+
+    <!-- ─── 행사 탭 (content탭과 공유하지 않는 독립 뷰) ─── -->
+    <div id="pane-event" style="display:none">
+      <div id="eventRootB"></div>
+    </div>
+
+    <!-- ─── 공지사항 ─── -->
+    <div id="pane-notice" style="display:none">
+      <div class="sl">새 공지사항 등록</div>
+      <div class="noticeCard" style="margin-bottom:16px">
+        <input class="urlInput" type="text" id="noticeTitle" placeholder="제목" style="margin-bottom:8px;width:100%">
+        <textarea class="noticeInput" id="noticeContent" placeholder="내용"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
+            <input type="checkbox" id="noticePinned"> 상단 고정
+          </label>
+          <button class="btn pr sm" onclick="addNotice()">등록</button>
+        </div>
+      </div>
+      <div class="sl">등록된 공지사항</div>
+      <div id="noticeList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 미리보기 모달 -->
+<div class="pvOverlay" id="pvOverlay" style="display:none" onclick="closePv()">
+  <div class="pvModal" onclick="event.stopPropagation()">
+    <div class="pvHeader">
+      <div class="pvTitle" id="pvTitle"></div>
+      <button class="btn sm" onclick="closePv()">닫기</button>
+    </div>
+    <div class="pvBody" id="pvBody"></div>
+  </div>
+</div>
+
+<!-- JSON 내보내기 모달 -->
+<div class="overlay" id="expOverlay" style="display:none" onclick="closeM('expOverlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modalTitle">링크 데이터 내보내기</div>
+    <div class="modalSub">아래 JSON을 복사하거나, 다운로드해서 data/links.json을 교체하세요</div>
+    <textarea class="jsonArea" id="expText" readonly></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn pr" style="flex:1" onclick="doCopy()">클립보드 복사</button>
+      <button class="btn pr" style="flex:1" onclick="LinksStore.exportJSON()">JSON 다운로드</button>
+      <button class="btn" style="flex:1" onclick="closeM('expOverlay')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- JSON 가져오기 모달 -->
+<div class="overlay" id="impOverlay" style="display:none" onclick="closeM('impOverlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modalTitle">링크 데이터 가져오기</div>
+    <div class="modalSub">links.json 내용을 붙여넣으면 기존 데이터에 병합됩니다</div>
+    <textarea class="jsonArea" id="impText" placeholder='{"rs-1-2a":{"trackUrl":"https://..."}}'></textarea>
+    <div id="impErr" style="color:var(--danger);font-size:11px;margin-top:4px;display:none">JSON 형식 오류</div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn pr" style="flex:1" onclick="doImport()">가져오기</button>
+      <button class="btn" style="flex:1" onclick="closeM('impOverlay')">취소</button>
+    </div>
+  </div>
+</div>
+
+<script src="./js/data.js"></script>
+<script src="./js/links-loader.js"></script>
+<script>
+const ADMIN_PW = 'wollim2026';
+
+// ── 인증 ──────────────────────────────────────────────────────
+function doLogin(){
+  const pw = document.getElementById('pwInput').value;
+  if(pw===ADMIN_PW){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('adminApp').style.display='flex';
+    initApp();
+  } else {
+    document.getElementById('loginErr').style.display='block';
+  }
+}
+document.getElementById('pwInput').addEventListener('keydown',e=>{ if(e.key==='Enter')doLogin(); });
+function doLogout(){ location.reload(); }
+
+// ── 탭 ────────────────────────────────────────────────────────
+let currentTab='dash';
+function switchTab(id){
+  ['dash','content','event','notice'].forEach(t=>{
+    document.getElementById('pane-'+t).style.display = t===id?'block':'none';
+    document.getElementById('tab-'+t).classList.toggle('on',t===id);
+  });
+  currentTab=id;
+  if(id==='dash') renderDash();
+  if(id==='event') renderEventB();
+  if(id==='notice') renderNoticeList();
+}
+let currentCTab='subject';
+function switchCTab(id){
+  ['subject','event'].forEach(t=>{
+    document.getElementById(t+'Pane').style.display=t===id?'block':'none';
+    document.getElementById('ctab-'+t).classList.toggle('on',t===id);
+  });
+  currentCTab=id;
+  if(id==='event') renderEventRoot();
+}
+
+// ── 공통 헬퍼 ─────────────────────────────────────────────────
+function toast(msg,col='var(--success)'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.background=col; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),1600);
+}
+function closeM(id){ document.getElementById(id).style.display='none'; }
+function closePv(){ document.getElementById('pvOverlay').style.display='none'; }
+function esc(s){ return (s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;'); }
+
+// ── 미리보기 ──────────────────────────────────────────────────
+function openPreview(itemId, typeKey, title){
+  const url = LinksStore.get(itemId, typeKey);
+  if(!url){ toast('URL을 먼저 저장해주세요','var(--video)'); return; }
+  document.getElementById('pvTitle').textContent = title;
+  document.getElementById('pvBody').innerHTML = getPreviewHTML(url, typeKey, title);
+  document.getElementById('pvOverlay').style.display='flex';
+}
+
+// ── URL 행 HTML ────────────────────────────────────────────────
+function urlRowHTML(itemId, typeKey, tagLabel, tagCls, placeholder, itemTitle){
+  const val = LinksStore.get(itemId, typeKey);
+  const filled = !!val;
+  const showPv = filled;
+  return `<div class="urlRow">
+    <span class="typeTag ${filled?tagCls:''}">${tagLabel}</span>
+    <input class="urlInput ${filled?'filled':''}" type="url"
+      data-id="${esc(itemId)}" data-type="${typeKey}"
+      value="${esc(val)}" placeholder="${placeholder}">
+    ${filled?`<button class="clrBtn" onclick="clearLink('${esc(itemId)}','${typeKey}')">✕</button>`:''}
+    ${showPv?`<button class="pvBtn active" onclick="openPreview('${esc(itemId)}','${typeKey}','${esc(itemTitle)}')">미리보기</button>`:''}
+    <button class="svBtn" id="sb-${esc(itemId)}-${typeKey}" onclick="saveLink('${esc(itemId)}','${typeKey}')">저장</button>
+  </div>`;
+}
+
+function saveLink(id, type){
+  const inp = document.querySelector(`input[data-id="${id}"][data-type="${type}"]`);
+  if(!inp) return;
+  LinksStore.set(id, type, inp.value);
+  const btn = document.getElementById('sb-'+id+'-'+type);
+  if(btn){ btn.textContent='✓'; btn.classList.add('ok'); setTimeout(()=>{ btn.textContent='저장'; btn.classList.remove('ok'); },1400); }
+  toast('저장됨!');
+  if(currentTab==='dash') renderDash();
+  renderPage();
+}
+
+function clearLink(id, type){
+  LinksStore.clear(id, type);
+  toast('삭제됨','#888');
+  renderPage();
+}
+
+function attachInputHandlers(){
+  document.querySelectorAll('input[data-id]').forEach(inp=>{
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter') saveLink(inp.dataset.id, inp.dataset.type); });
+    inp.addEventListener('input', ()=>{
+      const btn = document.getElementById('sb-'+inp.dataset.id+'-'+inp.dataset.type);
+      if(btn){ btn.textContent='저장'; btn.classList.remove('ok'); }
+    });
+  });
+}
+
+// ── 아이템 카드 ───────────────────────────────────────────────
+function itemCardHTML(item){
+  const tFilled = LinksStore.has(item.id,'trackUrl');
+  const vFilled = LinksStore.has(item.id,'videoUrl');
+  const pFilled = LinksStore.has(item.id,'planUrl');
+  const dots = [
+    `<span class="dot" style="background:${tFilled?'var(--track)':'var(--border2)'}"></span>`,
+    `<span class="dot" style="background:${vFilled?'var(--video)':'var(--border2)'}"></span>`,
+    `<span class="dot" style="background:${pFilled?'var(--plan)':'var(--border2)'}"></span>`,
+  ].join('');
+  return `<div class="itemCard">
+    <div class="itemTitle"><span>${esc(item.title)}</span><div class="dots">${dots}</div></div>
+    ${urlRowHTML(item.id,'trackUrl','음원','t','MP3 / Cloudinary URL', item.title)}
+    ${urlRowHTML(item.id,'videoUrl','YouTube','v','YouTube URL', item.title)}
+    ${urlRowHTML(item.id,'planUrl','PDF','p','PDF / Google Drive URL', item.title)}
+  </div>`;
+}
+
+function singleCardHTML(item, typeKey, tagLabel, tagCls, placeholder){
+  const filled = LinksStore.has(item.id, typeKey);
+  const dotColor = tagCls==='v'?'var(--video)':tagCls==='p'?'var(--plan)':'var(--track)';
+  return `<div class="itemCard">
+    <div class="itemTitle"><span>${esc(item.title)}</span>
+      <span class="dot" style="background:${filled?dotColor:'var(--border2)'}"></span>
+    </div>
+    ${urlRowHTML(item.id, typeKey, tagLabel, tagCls, placeholder, item.title)}
+  </div>`;
+}
+
+// ── 과목 콘텐츠 탐색 ──────────────────────────────────────────
+let cSel = { subj:null, prog:null, issue:null, step:null };
+
+function subjPct(subjId){
+  const d = CONTENT[subjId]; if(!d) return 0;
+  let tot=0, fil=0;
+  function tr(n){ if(!n||typeof n!=='object')return; if(Array.isArray(n)){n.forEach(item=>{tot+=3;['trackUrl','videoUrl','planUrl'].forEach(k=>{if(LinksStore.has(item.id,k))fil++;});});return;}Object.values(n).forEach(tr); }
+  tr(d); return tot?Math.round(fil/tot*100):0;
+}
+
+function renderSubjectRoot(){
+  const root = document.getElementById('subjectRoot');
+  const {subj,prog,issue,step} = cSel;
+  if(!subj){
+    root.innerHTML = `<div class="sl">과목 선택</div>
+      <div class="grid5">${SUBJECTS.map(s=>{
+        const pct=subjPct(s.id);
+        return `<button class="gBtn" onclick="cSel={subj:'${s.id}',prog:null,issue:null,step:null};renderSubjectRoot()">
+          <span style="font-size:18px">${s.icon}</span>
+          <span class="gl">${s.name}</span>
+          <div class="pbar"><div class="pfill" style="width:${pct}%"></div></div>
+          <span style="font-size:8px;color:var(--muted)">${pct}%</span>
+        </button>`;
+      }).join('')}</div>`;
+    return;
+  }
+  const si = SUBJECTS.find(s=>s.id===subj);
+  const hasP = PROGRAMS[subj];
+  let cr = `<span onclick="cSel={subj:null,prog:null,issue:null,step:null};renderSubjectRoot()">전체</span><span class="crumbSep">›</span>
+    <span ${!prog&&!issue?'class="cur"':''} onclick="cSel.prog=null;cSel.issue=null;cSel.step=null;renderSubjectRoot()">${si.icon} ${si.name}</span>`;
+  if(prog){ const pi=hasP?.find(p=>p.id===prog); cr+=`<span class="crumbSep">›</span><span ${!issue?'class="cur"':''} onclick="cSel.issue=null;cSel.step=null;renderSubjectRoot()">${pi?.name}</span>`; }
+  if(issue){ cr+=`<span class="crumbSep">›</span><span ${!step?'class="cur"':''} onclick="cSel.step=null;renderSubjectRoot()">${issue}호</span>`; }
+  if(step){ const sti=STEPS.find(s=>s.id===step); cr+=`<span class="crumbSep">›</span><span class="cur">${sti.label}</span>`; }
+
+  let body='';
+  if(hasP&&!prog){
+    body=`<div class="sl">프로그램 선택</div><div class="grid2">${hasP.map(p=>`<button class="gBtn" style="padding:14px" onclick="cSel.prog='${p.id}';cSel.issue=null;cSel.step=null;renderSubjectRoot()"><span style="font-size:20px">${p.icon}</span><span class="gl" style="font-size:11px">${p.name}</span></button>`).join('')}</div>`;
+  } else if(!issue){
+    body=`<div class="sl">호수 선택</div><div class="grid4">${ISSUES.map(iss=>`<button class="gBtn" onclick="cSel.issue=${iss.id};cSel.step=null;renderSubjectRoot()"><span class="gm">${iss.id}</span><span class="gl">${iss.label}</span></button>`).join('')}</div>`;
+  } else if(!step){
+    body=`<div class="sl">${issue}호 · 연령 선택</div><div class="grid2">${STEPS.map(s=>`<button class="gBtn" style="padding:12px" onclick="cSel.step='${s.id}';renderSubjectRoot()"><span class="gm" style="font-size:13px">${s.label}</span><span class="gl">${s.age}</span></button>`).join('')}</div>`;
+  } else {
+    const d = hasP&&prog ? CONTENT[subj]?.[prog]?.[issue]?.[step] : CONTENT[subj]?.[issue]?.[step];
+    const sti = STEPS.find(s=>s.id===step);
+    body = `<div class="sl">${issue}호 · ${sti.label} · ${sti.age}</div>`;
+    if(!d){ body+=`<div class="empty">콘텐츠가 없습니다</div>`; }
+    else {
+      if(d.tracks?.length){ body+=`<div style="font-size:10px;font-weight:700;color:var(--track);letter-spacing:1px;margin-bottom:8px">♫ 음원 (${d.tracks.length})</div>`; d.tracks.forEach(t=>{ body+=itemCardHTML(t); }); }
+      if(d.videos?.length){ body+=`<div style="font-size:10px;font-weight:700;color:var(--video);letter-spacing:1px;margin:12px 0 8px">▶ 영상 (${d.videos.length})</div>`; d.videos.forEach(v=>{ body+=singleCardHTML(v,'videoUrl','YouTube','v','YouTube URL'); }); }
+      if(d.plans?.length){ body+=`<div style="font-size:10px;font-weight:700;color:var(--plan);letter-spacing:1px;margin:12px 0 8px">📋 계획안 (${d.plans.length})</div>`; d.plans.forEach(p=>{ body+=singleCardHTML(p,'planUrl','PDF','p','PDF / Google Drive URL'); }); }
+    }
+  }
+  root.innerHTML = `<div class="crumb">${cr}</div>${body}`;
+  attachInputHandlers();
+}
+
+// ── 행사 탐색 ─────────────────────────────────────────────────
+let eSel = { subj:null, evId:null, subId:null };
+
+function evItemsHTML(src){
+  let html='';
+  if(src.tracks?.length){ src.tracks.forEach(t=>{ html+=`<div class="itemCard"><div class="itemTitle"><span>${esc(t.title)}</span><span class="dot" style="background:${LinksStore.has(t.id,'trackUrl')?'var(--track)':'var(--border2)'}"></span></div>${urlRowHTML(t.id,'trackUrl','음원','t','MP3 / Cloudinary URL',t.title)}</div>`; }); }
+  if(src.videos?.length){ src.videos.forEach(v=>{ html+=`<div class="itemCard"><div class="itemTitle"><span>${esc(v.title)}</span><span class="dot" style="background:${LinksStore.has(v.id,'videoUrl')?'var(--video)':'var(--border2)'}"></span></div>${urlRowHTML(v.id,'videoUrl','YouTube','v','YouTube URL',v.title)}</div>`; }); }
+  if(src.plans?.length){ src.plans.forEach(p=>{ html+=`<div class="itemCard"><div class="itemTitle"><span>${esc(p.title)}</span><span class="dot" style="background:${LinksStore.has(p.id,'planUrl')?'var(--plan)':'var(--border2)'}"></span></div>${urlRowHTML(p.id,'planUrl','PDF','p','PDF / Google Drive URL',p.title)}</div>`; }); }
+  return html||`<div class="empty">자료 없음</div>`;
+}
+
+function renderEventList(rootId){
+  let html='';
+  SUBJECTS.forEach(s=>{
+    const evList = EVENTS[s.id]; if(!evList?.length) return;
+    html+=`<div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px">${s.icon} ${s.name}</div>`;
+    evList.forEach(ev=>{
+      html+=`<div class="evCard" onclick="eSel={subj:'${s.id}',evId:'${ev.id}',subId:null};${rootId==='eventRoot'?'renderEventRoot()':'renderEventB()'}">
+        <span style="font-size:22px">${ev.icon}</span>
+        <div style="flex:1"><div style="font-size:12px;font-weight:700">${esc(ev.title)}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${ev.date}</div></div>
+        <span style="font-size:10px;color:var(--muted)">→</span>
+      </div>`;
+    });
+    html+=`<div style="height:4px"></div>`;
+  });
+  return html;
+}
+
+function renderEventDetail(rootId){
+  const {subj,evId,subId} = eSel;
+  const evList = EVENTS[subj]||[];
+  const ev = evList.find(e=>e.id===evId);
+  if(!ev) return '';
+  const si = SUBJECTS.find(s=>s.id===subj);
+  const renderFn = rootId==='eventRoot'?'renderEventRoot()':'renderEventB()';
+  let cr = `<span onclick="eSel={subj:null,evId:null,subId:null};${renderFn}">전체</span><span class="crumbSep">›</span>
+    <span ${!subId?'class="cur"':''} onclick="eSel.subId=null;${renderFn}">${si.icon} ${esc(ev.title)}</span>`;
+  if(subId){ const se=ev.subEvents?.find(s=>s.id===subId); cr+=`<span class="crumbSep">›</span><span class="cur">${se?.emoji} ${esc(se?.title)}</span>`; }
+
+  let body='';
+  if(ev.subEvents && !subId){
+    body=`<div class="sl">세부 행사 선택</div>`;
+    ev.subEvents.forEach(se=>{
+      body+=`<div class="evCard" onclick="eSel.subId='${se.id}';${renderFn}">
+        <span style="font-size:20px">${se.emoji}</span>
+        <div style="flex:1"><div style="font-size:12px;font-weight:700">${esc(se.title)}</div></div>
+        <span style="font-size:10px;color:var(--muted)">→</span>
+      </div>`;
+    });
+    body+=`<div class="sl" style="margin-top:16px">공통 자료</div>`;
+    body+=evItemsHTML(ev);
+  } else {
+    const src = subId ? ev.subEvents?.find(s=>s.id===subId) : ev;
+    body = evItemsHTML(src||ev);
+  }
+  return `<div class="crumb">${cr}</div>${body}`;
+}
+
+function renderEventRoot(){
+  const root = document.getElementById('eventRoot');
+  root.innerHTML = !eSel.subj ? renderEventList('eventRoot') : renderEventDetail('eventRoot');
+  attachInputHandlers();
+}
+
+function renderEventB(){
+  const root = document.getElementById('eventRootB');
+  root.innerHTML = !eSel.subj ? renderEventList('eventRootB') : renderEventDetail('eventRootB');
+  attachInputHandlers();
+}
+
+// renderPage 통합 라우터
+function renderPage(){
+  if(currentCTab==='subject') renderSubjectRoot();
+  if(currentCTab==='event') renderEventRoot();
+  if(currentTab==='event') renderEventB();
+  if(currentTab==='notice') renderNoticeList();
+}
+
+// ── 대시보드 ──────────────────────────────────────────────────
+function renderDash(){
+  const s = LinksStore.stats();
+  let allPoss=0;
+  function countAll(n){ if(!n||typeof n!=='object')return; if(Array.isArray(n)){allPoss+=n.length*3;return;}Object.values(n).forEach(countAll); }
+  Object.values(CONTENT).forEach(countAll);
+  Object.values(EVENTS).forEach(evList=>evList.forEach(ev=>{
+    const srcs=ev.subEvents||[ev];
+    srcs.forEach(src=>{ allPoss+=(src.tracks?.length||0)*3+(src.videos?.length||0)*3+(src.plans?.length||0)*3; });
+  }));
+
+  document.getElementById('statRow').innerHTML = [
+    { n:s.totalLinks, l:'등록된 링크' },
+    { n:s.filledItems, l:'아이템 수' },
+    { n:allPoss?Math.round(s.totalLinks/allPoss*100)+'%':'0%', l:'전체 진행률' },
+  ].map(x=>`<div class="statCard"><div class="statNum">${x.n}</div><div class="statLbl">${x.l}</div></div>`).join('');
+
+  document.getElementById('dashSubjects').innerHTML = SUBJECTS.map(s=>{
+    const pct=subjPct(s.id);
+    return `<div class="dashItem">
+      <div>${s.icon} <strong>${s.name}</strong></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:80px;height:4px;border-radius:4px;background:var(--border2);overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:var(--success);border-radius:4px"></div>
+        </div>
+        <span style="font-size:11px;color:var(--muted);min-width:28px;text-align:right">${pct}%</span>
+        <button class="btn sm" onclick="cSel={subj:'${s.id}',prog:null,issue:null,step:null};switchTab('content');switchCTab('subject');renderSubjectRoot()">관리</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 공지사항 ──────────────────────────────────────────────────
+let notices = JSON.parse(localStorage.getItem('wollim_notices')||'[]');
+function saveNotices(){ localStorage.setItem('wollim_notices',JSON.stringify(notices)); }
+
+function addNotice(){
+  const title=document.getElementById('noticeTitle').value.trim();
+  const content=document.getElementById('noticeContent').value.trim();
+  if(!title||!content){ toast('제목과 내용을 입력해주세요','var(--video)'); return; }
+  const pinned=document.getElementById('noticePinned').checked;
+  notices.unshift({ id:Date.now(), title, content, pinned, date:new Date().toLocaleDateString('ko-KR') });
+  saveNotices();
+  document.getElementById('noticeTitle').value='';
+  document.getElementById('noticeContent').value='';
+  document.getElementById('noticePinned').checked=false;
+  toast('공지사항 등록됨!');
+  renderNoticeList();
+}
+
+function deleteNotice(id){ notices=notices.filter(n=>n.id!==id); saveNotices(); renderNoticeList(); }
+function togglePin(id){ notices=notices.map(n=>n.id===id?{...n,pinned:!n.pinned}:n); saveNotices(); renderNoticeList(); }
+
+function renderNoticeList(){
+  const el=document.getElementById('noticeList');
+  if(!notices.length){ el.innerHTML=`<div class="empty">등록된 공지사항이 없습니다</div>`; return; }
+  el.innerHTML=notices.map(n=>`<div class="noticeCard">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          ${n.pinned?`<span style="font-size:10px;font-weight:700;color:var(--video);border:1px solid var(--video);border-radius:4px;padding:1px 6px">고정</span>`:''}
+          <span style="font-size:12px;font-weight:700">${esc(n.title)}</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">${n.date}</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">${esc(n.content)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+        <button class="btn sm" onclick="togglePin(${n.id})">${n.pinned?'고정해제':'고정'}</button>
+        <button class="btn sm danger" onclick="deleteNotice(${n.id})">삭제</button>
+      </div>
+    </div>
+  </div>`).join('');
+}
+
+// ── 내보내기/가져오기 ─────────────────────────────────────────
+function showImpModal(){ document.getElementById('impOverlay').style.display='flex'; }
+function showExpModal(){ document.getElementById('expText').value=LinksStore.rawJSON(); document.getElementById('expOverlay').style.display='flex'; }
+function doCopy(){ LinksStore.copyToClipboard().then(()=>toast('복사됨!')); }
+function doImport(){
+  try{
+    const parsed=JSON.parse(document.getElementById('impText').value);
+    LinksStore.merge(parsed);
+    closeM('impOverlay');
+    document.getElementById('impText').value='';
+    toast('가져오기 완료!');
+    renderPage(); renderDash();
+  } catch{ document.getElementById('impErr').style.display='block'; }
+}
+
+// ── 앱 초기화 ─────────────────────────────────────────────────
+async function initApp(){
+  await LinksStore.init();
+  renderDash();
+  renderSubjectRoot();
+}
+
+// 헤더 내보내기 버튼 연결
+document.querySelector('.appHeader .headerRight').innerHTML += '';
+</script>
+</body>
+</html>

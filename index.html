@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>울림티쳐</title>
+<style>
+:root{
+  --bg:#fff;--surface:#fafafa;--border:#eee;--border2:#e0e0e0;
+  --text:#111;--muted:#999;--accent:#111;
+  --track:#6366f1;--video:#ef4444;--plan:#10b981;
+  --font:'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+.appWrap{max-width:480px;margin:0 auto;position:relative;min-height:100vh}
+
+/* ── 헤더 ── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 12px;border-bottom:1px solid var(--border);
+  background:#fff;position:sticky;top:0;z-index:50;
+}
+.logoText{font-size:17px;font-weight:900;letter-spacing:-.5px}
+.logoSub{font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.headerIcons{display:flex;gap:4px}
+.iconBtn{
+  width:40px;height:40px;border:none;background:none;
+  font-size:18px;cursor:pointer;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.iconBtn:hover{background:var(--surface)}
+
+/* ── 하단 내비 ── */
+.nav{
+  display:flex;position:fixed;bottom:0;
+  left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
+  background:#fff;border-top:1px solid var(--border);z-index:50;
+  padding:6px 0 env(safe-area-inset-bottom,8px);
+}
+.navItem{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 0 4px;background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:9px;font-weight:600;font-family:var(--font);
+  transition:color .1s;
+}
+.navItem.on{color:var(--text)}
+.navIcon{font-size:20px;line-height:1}
+
+/* ── 메인 섹션 ── */
+.section{padding:20px 20px 100px}
+.sectionTitle{font-size:19px;font-weight:800;margin-bottom:16px;letter-spacing:-.3px}
+
+/* ── 과목 그리드 ── */
+.subjGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.subjBtn{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:14px 4px 10px;
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  cursor:pointer;font-family:var(--font);transition:all .15s;
+}
+.subjBtn:active,.subjBtn.on{background:var(--text);border-color:var(--text)}
+.subjBtn.on .subjName{color:#fff}
+.subjIcon{font-size:22px}
+.subjName{font-size:10px;font-weight:700;color:var(--text)}
+
+/* ── 프로그램 카드 ── */
+.progCard{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px;margin-bottom:10px;cursor:pointer;
+  display:flex;align-items:center;gap:14px;transition:all .15s;
+}
+.progCard:hover{border-color:var(--border2)}
+
+/* ── 호수/연령 그리드 ── */
+.issueGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stepGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.issueBtn,.stepBtn{
+  padding:12px 4px;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;cursor:pointer;font-family:var(--font);text-align:center;
+  transition:all .12s;
+}
+.issueBtn:hover,.stepBtn:hover{border-color:var(--border2)}
+
+/* ── 탭 Pills ── */
+.pillRow{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
+.pill{
+  padding:7px 16px;border-radius:20px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-size:11px;font-weight:700;
+  cursor:pointer;white-space:nowrap;font-family:var(--font);transition:all .12s;
+}
+.pill.on{background:var(--text);border-color:var(--text);color:#fff}
+
+/* ── 트랙 아이템 ── */
+.trackItem{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:11px;margin-bottom:7px;cursor:pointer;transition:all .15s;
+}
+.trackItem.playing{background:var(--text);border-color:var(--text)}
+.playBtn{
+  width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;background:var(--text);color:#fff;
+  transition:all .15s;
+}
+.playing .playBtn{background:#fff;color:var(--text)}
+.trackInfo{flex:1;min-width:0}
+.trackTitle{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.playing .trackTitle{color:#fff}
+.trackMeta{font-size:10px;color:var(--muted);margin-top:2px}
+.playing .trackMeta{color:rgba(255,255,255,.6)}
+.favBtn{background:none;border:none;font-size:18px;cursor:pointer;padding:8px;min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center}
+
+/* ── 영상/계획안 카드 ── */
+.mediaCard{
+  background:var(--surface);border:1px solid var(--border);border-radius:11px;
+  padding:13px 14px;margin-bottom:7px;cursor:pointer;transition:all .15s;
+}
+.mediaCard:hover{border-color:var(--border2)}
+.mediaTitle{font-size:12px;font-weight:700;margin-bottom:4px}
+.mediaMeta{font-size:10px;color:var(--muted)}
+.mediaTag{display:inline-block;padding:3px 8px;border-radius:5px;font-size:9px;font-weight:700;margin-right:6px}
+.tag-video{background:rgba(239,68,68,.1);color:var(--video)}
+.tag-plan{background:rgba(16,185,129,.1);color:var(--plan)}
+
+/* ── 공지 카드 ── */
+.noticeCard{
+  background:var(--surface);border:1px solid var(--border);border-radius:11px;
+  padding:13px 14px;margin-bottom:7px;cursor:pointer;transition:all .15s;
+}
+.noticeCard:hover{border-color:var(--border2)}
+
+/* ── 미니 플레이어 ── */
+.miniPlayer{
+  position:fixed;bottom:58px;left:50%;transform:translateX(-50%);
+  width:calc(100% - 28px);max-width:452px;
+  background:var(--text);color:#fff;border-radius:14px;
+  padding:10px 14px;z-index:48;
+  box-shadow:0 8px 32px rgba(0,0,0,.18);
+}
+.mpRow{display:flex;align-items:center;gap:10px}
+.mpPlay{
+  width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;
+  background:#fff;color:var(--text);font-size:13px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.mpTitle{font-size:12px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mpClose{background:none;border:none;color:rgba(255,255,255,.5);font-size:16px;cursor:pointer;padding:4px}
+.progressBar{height:3px;background:rgba(255,255,255,.2);border-radius:2px;margin-top:8px;cursor:pointer}
+.progressFill{height:100%;background:#fff;border-radius:2px;transition:width .5s linear}
+
+/* ── 미리보기 모달 ── */
+.pvOverlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.pvModal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:82vh;overflow-y:auto;padding:16px 0 40px;border-top:1px solid var(--border)}
+.pvHead{display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;border-bottom:1px solid var(--border)}
+.pvHeadTitle{font-size:13px;font-weight:700}
+
+/* ── 행사 ── */
+.evBanner{border-radius:14px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;color:#fff}
+.evCard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .15s}
+.evCard:hover{border-color:var(--border2)}
+
+/* ── 즐겨찾기 ── */
+.favSection{margin-bottom:16px}
+
+/* ── 빈 상태 ── */
+.empty{text-align:center;padding:36px 20px;color:var(--muted);font-size:12px}
+.emptyIcon{font-size:36px;margin-bottom:10px}
+
+/* ── 뒤로가기 버튼 ── */
+.backBtn{background:none;border:none;font-size:13px;font-weight:700;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:4px;padding:2px 0;margin-bottom:14px;font-family:var(--font)}
+</style>
+</head>
+<body>
+<div class="appWrap">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div id="headerLeft">
+      <div class="logoText">울림티쳐</div>
+      <div class="logoSub">Wollim Teacher</div>
+    </div>
+    <div class="headerIcons">
+      <button class="iconBtn" onclick="alert('검색 기능 준비 중')" title="검색">🔍</button>
+      <a href="./admin.html"><button class="iconBtn" title="어드민">⚙</button></a>
+    </div>
+  </div>
+
+  <!-- 메인 콘텐츠 -->
+  <div id="mainContent"></div>
+
+  <!-- 하단 내비 -->
+  <nav class="nav">
+    <button class="navItem on" id="nav-home" onclick="goPage('home')">
+      <span class="navIcon">⌂</span><span>홈</span>
+    </button>
+    <button class="navItem" id="nav-subjects" onclick="goPage('subjects')">
+      <span class="navIcon">▤</span><span>과목</span>
+    </button>
+    <button class="navItem" id="nav-favorites" onclick="goPage('favorites')">
+      <span class="navIcon">★</span><span>즐겨찾기</span>
+    </button>
+    <button class="navItem" id="nav-recent" onclick="goPage('recent')">
+      <span class="navIcon">🕐</span><span>최근</span>
+    </button>
+    <button class="navItem" id="nav-events" onclick="goPage('events')">
+      <span class="navIcon">🎪</span><span>행사</span>
+    </button>
+  </nav>
+
+  <!-- 미니 플레이어 -->
+  <div class="miniPlayer" id="miniPlayer" style="display:none">
+    <div class="mpRow">
+      <button class="mpPlay" id="mpPlayBtn" onclick="togglePlay()">▶</button>
+      <div style="flex:1;min-width:0">
+        <div class="mpTitle" id="mpTitle">-</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.5)" id="mpMeta"></div>
+      </div>
+      <button class="mpClose" onclick="stopPlayer()">✕</button>
+    </div>
+    <div class="progressBar" onclick="seekProgress(event)">
+      <div class="progressFill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- 미리보기 모달 -->
+  <div class="pvOverlay" id="pvOverlay" style="display:none" onclick="closePv()">
+    <div class="pvModal" onclick="event.stopPropagation()">
+      <div class="pvHead">
+        <div class="pvHeadTitle" id="pvHeadTitle">-</div>
+        <button style="background:none;border:none;font-size:20px;cursor:pointer" onclick="closePv()">✕</button>
+      </div>
+      <div id="pvBody" style="padding:0"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="./js/data.js"></script>
+<script src="./js/links-loader.js"></script>
+<script>
+// ── 상태 ────────────────────────────────────────────────────────
+let page = 'home';
+let selSubject = null, selProgram = null, selIssue = null, selStep = null;
+let selEvent = null, selSubEvent = null;
+let subjectTab = 'tracks';
+let planType = 'monthly';
+
+let playingTrack = null, isPlaying = false;
+let progress = 0, progressTimer = null;
+let audio = null;
+let favorites = JSON.parse(localStorage.getItem('wollim_favs') || '[]');
+let recentHistory = JSON.parse(localStorage.getItem('wollim_recent') || '[]');
+
+function saveFavs(){ localStorage.setItem('wollim_favs', JSON.stringify(favorites)); }
+function saveRecent(){ localStorage.setItem('wollim_recent', JSON.stringify(recentHistory)); }
+
+// ── 내비게이션 ─────────────────────────────────────────────────
+function goPage(p){
+  page = p;
+  selSubject = selProgram = selIssue = selStep = null;
+  selEvent = selSubEvent = null;
+  ['home','subjects','favorites','recent','events'].forEach(n=>{
+    document.getElementById('nav-'+n)?.classList.toggle('on', n===p);
+  });
+  render();
+}
+
+// ── 오디오 재생 ────────────────────────────────────────────────
+function playTrack(track){
+  if(playingTrack?.id === track.id){ togglePlay(); return; }
+  if(audio){ audio.pause(); audio=null; }
+  clearInterval(progressTimer);
+  playingTrack = track; isPlaying = true; progress = 0;
+
+  recentHistory = [{ track, ts: new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) },
+    ...recentHistory.filter(r=>r.track.id!==track.id)].slice(0,50);
+  saveRecent();
+
+  const url = LinksStore.get(track.id, 'trackUrl');
+  if(url){
+    audio = new Audio(url);
+    audio.play().catch(()=>{});
+    audio.onended = ()=>{ isPlaying=false; progress=100; updateMiniPlayer(); clearInterval(progressTimer); };
+  }
+
+  const totalSec = parseDur(track.duration||'3:00');
+  progressTimer = setInterval(()=>{
+    if(!isPlaying) return;
+    progress = Math.min(100, progress + 100/totalSec);
+    document.getElementById('progressFill').style.width = progress+'%';
+    if(progress>=100) clearInterval(progressTimer);
+  }, 1000);
+
+  updateMiniPlayer();
+  render();
+}
+
+function togglePlay(){
+  if(!playingTrack) return;
+  isPlaying = !isPlaying;
+  if(audio){ isPlaying ? audio.play() : audio.pause(); }
+  updateMiniPlayer();
+  render();
+}
+
+function stopPlayer(){
+  if(audio){ audio.pause(); audio=null; }
+  clearInterval(progressTimer);
+  playingTrack=null; isPlaying=false; progress=0;
+  document.getElementById('miniPlayer').style.display='none';
+  render();
+}
+
+function seekProgress(e){
+  const rect=e.currentTarget.getBoundingClientRect();
+  progress = Math.max(0,Math.min(100,((e.clientX-rect.left)/rect.width)*100));
+  if(audio){ const t=parseDur(playingTrack?.duration||'3:00'); audio.currentTime=(progress/100)*t; }
+  document.getElementById('progressFill').style.width=progress+'%';
+}
+
+function updateMiniPlayer(){
+  const mp=document.getElementById('miniPlayer');
+  if(!playingTrack){ mp.style.display='none'; return; }
+  mp.style.display='block';
+  document.getElementById('mpTitle').textContent=playingTrack.title;
+  const subj=SUBJECTS.find(s=>s.id===playingTrack._subj);
+  document.getElementById('mpMeta').textContent=subj?subj.name:'';
+  document.getElementById('mpPlayBtn').textContent=isPlaying?'❚❚':'▶';
+  document.getElementById('progressFill').style.width=progress+'%';
+}
+
+function parseDur(dur){ const p=dur.split(':').map(Number); return p.length===2?p[0]*60+p[1]:180; }
+
+// ── 즐겨찾기 ───────────────────────────────────────────────────
+function toggleFav(trackId){
+  if(favorites.includes(trackId)) favorites=favorites.filter(f=>f!==trackId);
+  else favorites.push(trackId);
+  saveFavs(); render();
+}
+
+// ── 미리보기 ───────────────────────────────────────────────────
+function openPv(itemId, typeKey, title){
+  const url = LinksStore.get(itemId, typeKey);
+  if(!url){ alert('링크가 등록되지 않았습니다'); return; }
+  document.getElementById('pvHeadTitle').textContent=title;
+  document.getElementById('pvBody').innerHTML=getPreviewHTML(url,typeKey,title);
+  document.getElementById('pvOverlay').style.display='flex';
+}
+function closePv(){ document.getElementById('pvOverlay').style.display='none'; }
+
+// ── 렌더 ────────────────────────────────────────────────────────
+function render(){
+  const el = document.getElementById('mainContent');
+  if(page==='home')         el.innerHTML=renderHome();
+  else if(page==='subjects')el.innerHTML=renderSubjects();
+  else if(page==='favorites')el.innerHTML=renderFavorites();
+  else if(page==='recent')  el.innerHTML=renderRecent();
+  else if(page==='events')  el.innerHTML=renderEvents();
+}
+
+// ── 홈 ─────────────────────────────────────────────────────────
+function renderHome(){
+  const notices = JSON.parse(localStorage.getItem('wollim_notices')||'[]');
+  const pinned = notices.filter(n=>n.pinned);
+  let html=`<div class="section">`;
+
+  if(pinned.length){
+    html+=pinned.map(n=>`<div class="noticeCard" style="border-color:#fbbf24;background:#fffbeb;margin-bottom:10px">
+      <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:3px">📌 공지</div>
+      <div style="font-size:12px;font-weight:700">${n.title}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">${n.date}</div>
+    </div>`).join('');
+  }
+
+  html+=`<div class="sectionTitle">과목 바로가기</div>
+    <div class="subjGrid">
+      ${SUBJECTS.slice(0,8).map(s=>`<button class="subjBtn" onclick="selSubject='${s.id}';selProgram=null;selIssue=null;selStep=null;page='subjects';renderSubjectDetail();document.getElementById('nav-subjects').classList.add('on');document.getElementById('nav-home').classList.remove('on')">
+        <span class="subjIcon">${s.icon}</span>
+        <span class="subjName">${s.name}</span>
+      </button>`).join('')}
+    </div>`;
+
+  if(notices.length){
+    html+=`<div class="sectionTitle" style="margin-top:8px">최신 공지</div>`;
+    html+=notices.slice(0,3).map(n=>`<div class="noticeCard"><div style="font-size:12px;font-weight:700">${n.title}</div><div style="font-size:10px;color:var(--muted);margin-top:3px">${n.date}</div></div>`).join('');
+  }
+
+  if(recentHistory.length){
+    html+=`<div class="sectionTitle" style="margin-top:16px">최근 재생</div>`;
+    html+=recentHistory.slice(0,3).map(({track,ts})=>trackItemHTML(track)).join('');
+  }
+
+  html+=`</div>`;
+  return html;
+}
+
+// ── 과목 목록 ──────────────────────────────────────────────────
+function renderSubjects(){
+  if(selSubject) return renderSubjectDetail();
+  return `<div class="section">
+    <div class="sectionTitle">과목</div>
+    <div class="subjGrid">
+      ${SUBJECTS.map(s=>`<button class="subjBtn" onclick="selSubject='${s.id}';selProgram=null;selIssue=null;selStep=null;render()">
+        <span class="subjIcon">${s.icon}</span>
+        <span class="subjName">${s.name}</span>
+      </button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderSubjectDetail(){
+  const si = SUBJECTS.find(s=>s.id===selSubject);
+  const hasP = PROGRAMS[selSubject];
+  let html='';
+
+  // 프로그램 선택
+  if(hasP && !selProgram){
+    if(hasP.length===1){ selProgram=hasP[0].id; return renderSubjectDetail(); }
+    html=`<div class="section">
+      <button class="backBtn" onclick="selSubject=null;render()">← 과목</button>
+      <div class="sectionTitle">${si.icon} ${si.name}</div>
+      ${hasP.map(p=>`<div class="progCard" onclick="selProgram='${p.id}';selIssue=null;selStep=null;render()">
+        <span style="font-size:26px">${p.icon}</span>
+        <div><div style="font-size:13px;font-weight:700">${p.name}</div></div>
+      </div>`).join('')}
+    </div>`;
+    return html;
+  }
+
+  // 호수 선택
+  if(!selIssue){
+    html=`<div class="section">
+      <button class="backBtn" onclick="${hasP?'selProgram=null':'selSubject=null'};render()">← ${hasP?PROGRAMS[selSubject]?.find(p=>p.id===selProgram)?.name:si.name}</button>
+      <div class="sectionTitle">${hasP?PROGRAMS[selSubject]?.find(p=>p.id===selProgram)?.name:si.name}</div>
+      <div class="sl" style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">호수 선택</div>
+      <div class="issueGrid">
+        ${ISSUES.map(iss=>`<button class="issueBtn" onclick="selIssue=${iss.id};selStep=null;render()">
+          <div style="font-size:16px;font-weight:800">${iss.id}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${iss.label}</div>
+        </button>`).join('')}
+      </div>
+    </div>`;
+    return html;
+  }
+
+  // 연령 선택
+  if(!selStep){
+    html=`<div class="section">
+      <button class="backBtn" onclick="selIssue=null;render()">← ${selIssue}호</button>
+      <div class="sectionTitle">${selIssue}호 · 연령 선택</div>
+      <div class="stepGrid">
+        ${STEPS.map(s=>`<button class="stepBtn" onclick="selStep='${s.id}';subjectTab='tracks';render()">
+          <div style="font-size:15px;font-weight:800">${s.label}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">${s.age}</div>
+        </button>`).join('')}
+      </div>
+    </div>`;
+    return html;
+  }
+
+  // 콘텐츠 목록
+  const d = hasP && selProgram ? CONTENT[selSubject]?.[selProgram]?.[selIssue]?.[selStep]
+                                : CONTENT[selSubject]?.[selIssue]?.[selStep];
+  const sti = STEPS.find(s=>s.id===selStep);
+
+  html=`<div class="section">
+    <button class="backBtn" onclick="selStep=null;render()">← ${selIssue}호</button>
+    <div class="sectionTitle">${selIssue}호 · ${sti.label}</div>
+    <div class="pillRow">
+      <button class="pill ${subjectTab==='tracks'?'on':''}" onclick="subjectTab='tracks';render()">음원</button>
+      <button class="pill ${subjectTab==='videos'?'on':''}" onclick="subjectTab='videos';render()">영상</button>
+      <button class="pill ${subjectTab==='plans'?'on':''}" onclick="subjectTab='plans';render()">계획안</button>
+    </div>`;
+
+  if(!d){ html+=`<div class="empty"><div class="emptyIcon">📂</div>콘텐츠가 없습니다</div>`; }
+  else if(subjectTab==='tracks'){
+    const items=d.tracks||[];
+    html += items.length ? items.map(t=>trackItemHTML({...t,_subj:selSubject})).join('') : `<div class="empty">음원 없음</div>`;
+  } else if(subjectTab==='videos'){
+    const items=d.videos||[];
+    html += items.length ? items.map(v=>mediaCardHTML(v,'video')).join('') : `<div class="empty">영상 없음</div>`;
+  } else {
+    const items=d.plans||[];
+    html += items.length ? items.map(p=>mediaCardHTML(p,'plan')).join('') : `<div class="empty">계획안 없음</div>`;
+  }
+
+  html+=`</div>`;
+  return html;
+}
+
+// ── 트랙 아이템 HTML ───────────────────────────────────────────
+function trackItemHTML(track){
+  const playing = playingTrack?.id===track.id;
+  const pl = playing && isPlaying;
+  const fav = favorites.includes(track.id);
+  const hasUrl = LinksStore.has(track.id,'trackUrl');
+  return `<div class="trackItem ${playing?'playing':''}" onclick="playTrack(${JSON.stringify({...track}).replace(/'/g,"&#39;")})">
+    <button class="playBtn">${pl?'❚❚':'▶'}</button>
+    <div class="trackInfo">
+      <div class="trackTitle">${track.title}</div>
+      <div class="trackMeta">${track.duration||''} ${!hasUrl?'· 링크 미등록':''}</div>
+    </div>
+    <button class="favBtn" onclick="event.stopPropagation();toggleFav('${track.id}')">${fav?'♥':'♡'}</button>
+  </div>`;
+}
+
+// ── 미디어 카드 HTML ───────────────────────────────────────────
+function mediaCardHTML(item, type){
+  const typeKey = type==='video'?'videoUrl':'planUrl';
+  const hasUrl = LinksStore.has(item.id, typeKey);
+  return `<div class="mediaCard" onclick="openPv('${item.id}','${typeKey}','${item.title.replace(/'/g,"\\'")}')">
+    <div class="mediaTitle">${item.title}</div>
+    <div class="mediaMeta">
+      <span class="mediaTag tag-${type}">${type==='video'?'영상':'계획안'}</span>
+      ${!hasUrl?'<span style="color:var(--video);font-size:10px">링크 미등록</span>':''}
+    </div>
+  </div>`;
+}
+
+// ── 즐겨찾기 ───────────────────────────────────────────────────
+function renderFavorites(){
+  let allTracks=[];
+  forEachItem((item,meta)=>{ if(meta.type==='tracks') allTracks.push({...item,_subj:meta.subj}); });
+  const favTracks = allTracks.filter(t=>favorites.includes(t.id));
+  return `<div class="section">
+    <div class="sectionTitle">즐겨찾기</div>
+    ${favTracks.length ? favTracks.map(t=>trackItemHTML(t)).join('') : `<div class="empty"><div class="emptyIcon">♡</div>즐겨찾기한 음원이 없습니다</div>`}
+  </div>`;
+}
+
+// ── 최근 재생 ──────────────────────────────────────────────────
+function renderRecent(){
+  return `<div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="sectionTitle" style="margin-bottom:0">최근 재생</div>
+      ${recentHistory.length?`<button style="background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--font)" onclick="recentHistory=[];saveRecent();render()">기록 삭제</button>`:''}
+    </div>
+    ${recentHistory.length ? recentHistory.map(({track,ts})=>`
+      <div style="margin-bottom:7px">
+        ${trackItemHTML(track)}
+      </div>`).join('') : `<div class="empty"><div class="emptyIcon">🕐</div>재생 기록이 없습니다</div>`}
+  </div>`;
+}
+
+// ── 행사 ───────────────────────────────────────────────────────
+function renderEvents(){
+  if(selSubEvent) return renderSubEventDetail();
+  if(selEvent) return renderEventDetail();
+  let html=`<div class="section"><div class="sectionTitle">행사</div>`;
+  SUBJECTS.forEach(s=>{
+    const evList=EVENTS[s.id]; if(!evList?.length) return;
+    html+=`<div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px">${s.icon} ${s.name}</div>`;
+    evList.forEach(ev=>{
+      html+=`<div class="evCard" onclick="selEvent=JSON.parse('${JSON.stringify(ev).replace(/'/g,"\\'")}');selSubEvent=null;render()">
+        <span style="font-size:22px">${ev.icon}</span>
+        <div style="flex:1"><div style="font-size:12px;font-weight:700">${ev.title}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${ev.date}</div></div>
+      </div>`;
+    });
+  });
+  html+=`</div>`;
+  return html;
+}
+
+function renderEventDetail(){
+  const ev=selEvent;
+  let html=`<div class="section">
+    <button class="backBtn" onclick="selEvent=null;render()">← 행사 목록</button>
+    <div class="sectionTitle">${ev.icon} ${ev.title}</div>`;
+
+  if(ev.subEvents?.length){
+    html+=`<div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">세부 행사</div>`;
+    ev.subEvents.forEach(se=>{
+      html+=`<div class="evCard" onclick="selSubEvent=${JSON.stringify(se).replace(/"/g,'&quot;')};render()">
+        <span style="font-size:20px">${se.emoji}</span>
+        <div style="flex:1"><div style="font-size:12px;font-weight:700">${se.title}</div></div>
+      </div>`;
+    });
+  }
+  html+=evContentHTML(ev);
+  html+=`</div>`;
+  return html;
+}
+
+function renderSubEventDetail(){
+  const se=selSubEvent;
+  return `<div class="section">
+    <button class="backBtn" onclick="selSubEvent=null;render()">← ${selEvent.title}</button>
+    <div class="sectionTitle">${se.emoji} ${se.title}</div>
+    ${evContentHTML(se)}
+  </div>`;
+}
+
+function evContentHTML(src){
+  let html='';
+  if(src.tracks?.length){
+    html+=`<div style="font-size:10px;font-weight:700;color:var(--track);letter-spacing:1px;margin:12px 0 8px">♫ 음원</div>`;
+    html+=src.tracks.map(t=>trackItemHTML({...t,_subj:'event'})).join('');
+  }
+  if(src.videos?.length){
+    html+=`<div style="font-size:10px;font-weight:700;color:var(--video);letter-spacing:1px;margin:12px 0 8px">▶ 영상</div>`;
+    html+=src.videos.map(v=>mediaCardHTML(v,'video')).join('');
+  }
+  if(src.plans?.length){
+    html+=`<div style="font-size:10px;font-weight:700;color:var(--plan);letter-spacing:1px;margin:12px 0 8px">📋 계획안</div>`;
+    html+=src.plans.map(p=>mediaCardHTML(p,'plan')).join('');
+  }
+  return html;
+}
+
+// ── 앱 시작 ────────────────────────────────────────────────────
+async function init(){
+  await LinksStore.init();
+  render();
+  updateMiniPlayer();
+}
+init();
+</script>
+</body>
+</html>
